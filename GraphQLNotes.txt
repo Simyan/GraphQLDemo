@@ -1,0 +1,141 @@
+A) Setup:
+Run in terminal in the directory folder - npm install express express-graphql graphql --save
+
+	//Create file server.js
+
+	//Import the following 
+	const express = require('express')
+	const graphqlHTTP = require('express-graphql')
+	const graphql = require('graphql')
+
+B) Query
+
+	//Setting up a query
+	const QueryRoot = new graphql.GraphQLObjectType ({
+		name: 'Query',
+		fields: () => ({
+		  //Add (i) here  
+		})
+	})
+
+	//Adding a basic query - (i)
+	helloworld: {
+				type: graphql.GraphQLString,
+				resolve: () => "Hello, world!"
+			}
+
+C) Set up schema and graphql server
+
+	//Instantiate schema object and supply the query
+	const schemaObj = new graphql.GraphQLSchema({ query : QueryRoot});
+
+	//Start listening
+	const app = express();
+	app.use('/api', graphqlHTTP({
+		schema: schemaObj,
+		graphiql: true,
+	}));
+	app.listen(2800);
+
+	//run it - node server.js'
+	
+D) Model Graphql types
+
+	//Model graphql Types
+	const MovieType = new GraphQLObjectType({
+		name: 'Movie',
+		fields : () => ({
+			Uid: {type: graphql.GraphQLNonNull(graphql.GraphQLInt)},
+			Name: {type:graphql.GraphQLNonNull(graphql.GraphQLString)},
+			Director: {type:graphql.GraphQLNonNull(graphql.GraphQLString)},
+			Rating: {type:graphql.GraphQLNonNull(graphql.GraphQLFloat)},
+		})
+	})
+
+	//Mock data source
+	const Movies = [
+    {Uid: 1, Name: 'Inception', Director: 'Cristopher Nolan', Rating: 91},
+    {Uid: 2, Name: 'Inglorious Basterds', Director: 'Quentin Tarantino', Rating: 88},
+    {Uid: 3, Name: 'Spirited Away', Director: 'Hayao Miyazaki', Rating: 96},
+    {Uid: 4, Name: 'Jojo Rabbit', Director: 'Taika Waititi', Rating: 94},
+    {Uid: 5, Name: 'Lady Bird', Director: 'Greta Gerwig', Rating: 79},
+    {Uid: 6, Name: 'Django Unchained', Director: 'Quentin Tarantino', Rating: 91},
+    {Uid: 7, Name: 'Arrival', Director: 'Denis Villeneuve', Rating: 82},
+    {Uid: 8, Name: 'Wolf Children', Director: 'Mamoru Hosoda', Rating: 92},
+    {Uid: 9, Name: 'My Neighbor Totoro', Director: 'Hayao Miyazaki', Rating: 94},
+]
+
+E) Querying based on types
+		//Get all movies
+        movies: {
+            type: graphql.GraphQLList(MovieType),
+            resolve: () => Movies
+        },
+		
+        //Get a single movies based on Uid
+        movie: {
+            type: MovieType,
+            args: {
+                Uid: { type: graphql.GraphQLInt }
+            },
+            resolve: (parents, args) => Movies.find(movie => movie.Uid == args.Uid)
+        }
+F) Mutation
+
+	//Setting up mutation
+	const MutationRoot = new graphql.GraphQLObjectType({
+		name: 'Mutation',
+		fields: () => ({
+			// Add (i) here
+		})
+	})
+
+	//Adding a mutation - (i)
+	newMovie: {
+				type: MovieType,
+				args: {
+					name: { type: graphql.GraphQLNonNull(graphql.GraphQLString)},
+					director: { type: graphql.GraphQLNonNull(graphql.GraphQLString)},
+					rating: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat)},
+				},
+				resolve: (parents, args) => {
+					const movieObj = {Uid: Movies.length + 1, Name: args.name, Director: args.director, Rating: args.rating  }
+					Movies.push(movieObj)
+					return movieObj
+				} 
+			}
+	
+	//Include MutationRoot in SchemaObj
+	
+	
+G) Client side
+
+query GetMovie{ 
+  movie(Uid: 4){
+    Name
+    Director
+    Rating
+  }
+  
+},
+
+query GetAllMovies { 
+  movies{
+    Name
+    Director
+    Rating
+  }
+  
+},
+
+mutation AddMovie ($name : String!, $director : String!, $rating : Float! ){
+  newMovie(name: $name, director: $director, rating: $rating){
+    Name
+  }
+}
+
+{
+  "name": "Pulp Fiction",
+  "director": "Quentin Tarantino",
+  "rating": 85
+}
